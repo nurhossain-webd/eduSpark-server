@@ -1,7 +1,26 @@
-import { Types } from "mongoose";
+import { FilterQuery, SortOrder, Types } from "mongoose";
 
 import Course, { ICourse } from "../models/Course";
 import { CreateCourseInput } from "../validations/course.validation";
+
+export interface CourseQueryOptions {
+  search?: string;
+  category?: string;
+  level?: string;
+  sort?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedCourses {
+  courses: ICourse[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCourses: number;
+    limit: number;
+  };
+}
 
 export async function createCourse(
   payload: CreateCourseInput,
@@ -11,12 +30,100 @@ export async function createCourse(
   return course;
 }
 
-export async function getAllCourses(): Promise<ICourse[]> {
-  const courses = await Course.find().sort({
-    createdAt: -1,
-  });
+export async function getAllCourses(
+  options: CourseQueryOptions,
+): Promise<PaginatedCourses> {
+  const {
+    search = "",
+    category = "",
+    level = "",
+    sort = "newest",
+    page = 1,
+    limit = 8,
+  } = options;
 
-  return courses;
+  const filter: FilterQuery<ICourse> = {};
+
+  if (search.trim()) {
+    filter.$or = [
+      {
+        title: {
+          $regex: search.trim(),
+          $options: "i",
+        },
+      },
+      {
+        shortDescription: {
+          $regex: search.trim(),
+          $options: "i",
+        },
+      },
+      {
+        instructor: {
+          $regex: search.trim(),
+          $options: "i",
+        },
+      },
+    ];
+  }
+
+  if (category.trim()) {
+    filter.category = category.trim();
+  }
+
+  if (level.trim()) {
+    filter.level = level.trim();
+  }
+
+  const sortOptions: Record<string, Record<string, SortOrder>> = {
+    newest: {
+      createdAt: -1,
+    },
+    oldest: {
+      createdAt: 1,
+    },
+    "price-low": {
+      price: 1,
+    },
+    "price-high": {
+      price: -1,
+    },
+    rating: {
+      rating: -1,
+    },
+    popular: {
+      students: -1,
+    },
+  };
+
+  const selectedSort = sortOptions[sort] ?? sortOptions.newest;
+
+  const safePage = Math.max(1, page);
+  const safeLimit = Math.min(Math.max(1, limit), 50);
+  const skip = (safePage - 1) * safeLimit;
+
+  const [courses, totalCourses] = await Promise.all([
+    Course.find(filter)
+      .sort(selectedSort)
+      .skip(skip)
+      .limit(safeLimit),
+    Course.countDocuments(filter),
+  ]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalCourses / safeLimit),
+  );
+
+  return {
+    courses,
+    pagination: {
+      currentPage: safePage,
+      totalPages,
+      totalCourses,
+      limit: safeLimit,
+    },
+  };
 }
 
 export async function getCourseById(
@@ -26,9 +133,7 @@ export async function getCourseById(
     return null;
   }
 
-  const course = await Course.findById(courseId);
-
-  return course;
+  return Course.findById(courseId);
 }
 
 export async function deleteCourseById(
@@ -38,7 +143,5 @@ export async function deleteCourseById(
     return null;
   }
 
-  const deletedCourse = await Course.findByIdAndDelete(courseId);
-
-  return deletedCourse;
+  return Course.findByIdAndDelete(courseId);
 }

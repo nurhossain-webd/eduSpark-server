@@ -38,15 +38,63 @@ export async function createCourse(
 }
 
 export async function getAllCourses(
-  _req: Request,
+  req: Request,
   res: Response,
 ): Promise<void> {
   try {
-    const courses = await CourseService.getAllCourses();
+    const search =
+      typeof req.query.search === "string"
+        ? req.query.search
+        : "";
+
+    const category =
+      typeof req.query.category === "string"
+        ? req.query.category
+        : "";
+
+    const level =
+      typeof req.query.level === "string"
+        ? req.query.level
+        : "";
+
+    const sort =
+      typeof req.query.sort === "string"
+        ? req.query.sort
+        : "newest";
+
+    const pageValue =
+      typeof req.query.page === "string"
+        ? Number(req.query.page)
+        : 1;
+
+    const limitValue =
+      typeof req.query.limit === "string"
+        ? Number(req.query.limit)
+        : 8;
+
+    const page =
+      Number.isFinite(pageValue) && pageValue > 0
+        ? Math.floor(pageValue)
+        : 1;
+
+    const limit =
+      Number.isFinite(limitValue) && limitValue > 0
+        ? Math.floor(limitValue)
+        : 8;
+
+    const result = await CourseService.getAllCourses({
+      search,
+      category,
+      level,
+      sort,
+      page,
+      limit,
+    });
 
     res.status(200).json({
       success: true,
-      data: courses,
+      data: result.courses,
+      pagination: result.pagination,
     });
   } catch (error) {
     console.error("Get courses error:", error);
