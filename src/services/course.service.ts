@@ -1,4 +1,4 @@
-import { FilterQuery, SortOrder, Types } from "mongoose";
+import { SortOrder, Types } from "mongoose";
 
 import Course, { ICourse } from "../models/Course";
 import { CreateCourseInput } from "../validations/course.validation";
@@ -144,4 +144,30 @@ export async function deleteCourseById(
   }
 
   return Course.findByIdAndDelete(courseId);
+}
+
+export async function updateCourse(
+
+  id: string,
+
+  payload: Partial<ICourse>,
+
+) {
+
+  return await Course.findByIdAndUpdate(
+
+    id,
+
+    payload,
+
+    {
+
+      new: true,
+
+      runValidators: true,
+
+    },
+
+  );
+
 }

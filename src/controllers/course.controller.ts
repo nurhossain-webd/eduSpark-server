@@ -3,6 +3,8 @@ import { Request, Response } from "express";
 import * as CourseService from "../services/course.service";
 import { createCourseSchema } from "../validations/course.validation";
 
+const updateCourseSchema = createCourseSchema.partial();
+
 export async function createCourse(
   req: Request,
   res: Response,
@@ -134,6 +136,63 @@ export async function getSingleCourse(
     res.status(500).json({
       success: false,
       message: "Unable to retrieve the course.",
+    });
+  }
+}
+
+export async function updateCourse(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const courseId = req.params.id;
+
+    const validation = updateCourseSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      res.status(400).json({
+        success: false,
+        message: "Please correct the invalid course information.",
+        errors: validation.error.flatten().fieldErrors,
+      });
+
+      return;
+    }
+
+    if (Object.keys(validation.data).length === 0) {
+      res.status(400).json({
+        success: false,
+        message: "Provide at least one course field to update.",
+      });
+
+      return;
+    }
+
+    const updatedCourse = await CourseService.updateCourse(
+      courseId,
+      validation.data,
+    );
+
+    if (!updatedCourse) {
+      res.status(404).json({
+        success: false,
+        message: "Course not found.",
+      });
+
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Course updated successfully.",
+      data: updatedCourse,
+    });
+  } catch (error) {
+    console.error("Update course error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to update the course.",
     });
   }
 }
