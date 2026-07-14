@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import morgan from "morgan";
 
+import authRoutes from "./routes/auth.routes";
 import courseRoutes from "./routes/course.routes";
 
 const app = express();
@@ -11,7 +12,7 @@ app.use(
   cors({
     origin: "http://localhost:3000",
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json());
@@ -20,13 +21,22 @@ app.use(cookieParser());
 
 app.use(morgan("dev"));
 
-app.get("/", (_, res) => {
-  res.json({
+app.get("/", (_req, res) => {
+  res.status(200).json({
     success: true,
     message: "Welcome to EduSpark API 🚀",
   });
 });
 
+app.use("/api/auth", authRoutes);
+
 app.use("/api/courses", courseRoutes);
+
+app.use((_req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "API route not found.",
+  });
+});
 
 export default app;
