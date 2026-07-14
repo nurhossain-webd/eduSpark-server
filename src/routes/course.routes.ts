@@ -7,17 +7,24 @@ import {
   getSingleCourse,
   updateCourse,
 } from "../controllers/course.controller";
+import { requireAuth } from "../middlewares/auth.middleware";
 
 const router = Router();
 
+/*
+ * Public routes
+ */
 router.get("/", getAllCourses);
-
-router.post("/", createCourse);
 
 router.get("/:id", getSingleCourse);
 
-router.patch("/:id", updateCourse);
+/*
+ * Protected routes
+ */
+router.post("/", requireAuth, createCourse);
 
-router.delete("/:id", deleteCourse);
+router.patch("/:id", requireAuth, updateCourse);
+
+router.delete("/:id", requireAuth, deleteCourse);
 
 export default router;
