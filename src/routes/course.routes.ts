@@ -7,6 +7,7 @@ import {
   getSingleCourse,
   updateCourse,
 } from "../controllers/course.controller";
+import { requireAdmin } from "../middlewares/admin.middleware";
 import { requireAuth } from "../middlewares/auth.middleware";
 
 const router = Router();
@@ -19,12 +20,27 @@ router.get("/", getAllCourses);
 router.get("/:id", getSingleCourse);
 
 /*
- * Protected routes
+ * Admin-only routes
  */
-router.post("/", requireAuth, createCourse);
+router.post(
+  "/",
+  requireAuth,
+  requireAdmin,
+  createCourse,
+);
 
-router.patch("/:id", requireAuth, updateCourse);
+router.patch(
+  "/:id",
+  requireAuth,
+  requireAdmin,
+  updateCourse,
+);
 
-router.delete("/:id", requireAuth, deleteCourse);
+router.delete(
+  "/:id",
+  requireAuth,
+  requireAdmin,
+  deleteCourse,
+);
 
 export default router;
