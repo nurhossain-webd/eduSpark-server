@@ -3,6 +3,8 @@ import cors from "cors";
 import express from "express";
 import morgan from "morgan";
 
+import courseRoutes from "./routes/course.routes";
+
 const app = express();
 
 app.use(
@@ -24,5 +26,7 @@ app.get("/", (_, res) => {
     message: "Welcome to EduSpark API 🚀",
   });
 });
+
+app.use("/api/courses", courseRoutes);
 
 export default app;
