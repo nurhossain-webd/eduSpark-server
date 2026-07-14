@@ -94,3 +94,14 @@ const accessToken = jwt.sign(
     accessToken,
   };
 }
+export async function getCurrentUser(
+  userId: string,
+): Promise<SafeUser> {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error("USER_NOT_FOUND");
+  }
+
+  return createSafeUser(user);
+}

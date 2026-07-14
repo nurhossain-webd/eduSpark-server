@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 
 import * as AuthService from "../services/auth.service";
+import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import {
   loginSchema,
   registerSchema,
@@ -102,6 +103,51 @@ export async function loginUser(
     res.status(500).json({
       success: false,
       message: "Unable to log in. Please try again.",
+    });
+  }
+}
+
+export async function getCurrentUser(
+  req: AuthenticatedRequest,
+  res: Response,
+): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: "Authentication is required.",
+      });
+
+      return;
+    }
+
+    const user = await AuthService.getCurrentUser(
+      req.user.userId,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Current user retrieved successfully.",
+      data: user,
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "USER_NOT_FOUND"
+    ) {
+      res.status(404).json({
+        success: false,
+        message: "User account not found.",
+      });
+
+      return;
+    }
+
+    console.error("Current user error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to retrieve the current user.",
     });
   }
 }
