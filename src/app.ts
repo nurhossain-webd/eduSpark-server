@@ -1,17 +1,19 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express from "express";
+import express, {
+  NextFunction,
+  Request,
+  Response,
+} from "express";
 import morgan from "morgan";
 
+import { connectDB } from "./config/db";
 import authRoutes from "./routes/auth.routes";
 import courseRoutes from "./routes/course.routes";
 import enrollmentRoutes from "./routes/enrollment.routes";
 
 const app = express();
 
-/*
- * Global middleware must come before routes.
- */
 app.use(
   cors({
     origin: [
@@ -23,27 +25,46 @@ app.use(
 );
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-app.get("/", (_req, res) => {
+/*
+ * Ensure MongoDB is connected before API controllers run.
+ * This is required for Vercel's function-based runtime.
+ */
+app.use(
+  async (
+    _req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      await connectDB();
+      next();
+    } catch (error) {
+      console.error("Database middleware error:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Database connection failed.",
+      });
+    }
+  },
+);
+
+app.get("/", (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: "Welcome to EduSpark API 🚀",
   });
 });
 
-/*
- * API routes
- */
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
 
-/*
- * Unknown API route
- */
-app.use((_req, res) => {
+app.use((_req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     message: "API route not found.",
