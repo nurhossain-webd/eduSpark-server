@@ -16,7 +16,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://YOUR-FRONTEND-VERCEL-URL.vercel.app",
+      "https://edu-spark-client.vercel.app",
     ],
     credentials: true,
   }),
