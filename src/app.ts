@@ -7,13 +7,11 @@ import authRoutes from "./routes/auth.routes";
 import courseRoutes from "./routes/course.routes";
 import enrollmentRoutes from "./routes/enrollment.routes";
 
-
 const app = express();
-app.use(
-  "/api/enrollments",
-  enrollmentRoutes,
-);
 
+/*
+ * Global middleware must come before routes.
+ */
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -22,9 +20,7 @@ app.use(
 );
 
 app.use(express.json());
-
 app.use(cookieParser());
-
 app.use(morgan("dev"));
 
 app.get("/", (_req, res) => {
@@ -34,10 +30,16 @@ app.get("/", (_req, res) => {
   });
 });
 
+/*
+ * API routes
+ */
 app.use("/api/auth", authRoutes);
-
 app.use("/api/courses", courseRoutes);
+app.use("/api/enrollments", enrollmentRoutes);
 
+/*
+ * Unknown API route
+ */
 app.use((_req, res) => {
   res.status(404).json({
     success: false,

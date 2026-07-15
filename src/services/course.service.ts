@@ -42,7 +42,7 @@ export async function getAllCourses(
     limit = 8,
   } = options;
 
-  const filter: FilterQuery<ICourse> = {};
+ const filter: Record<string, unknown> = {};
 
   if (search.trim()) {
     filter.$or = [

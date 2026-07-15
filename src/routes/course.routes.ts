@@ -7,6 +7,7 @@ import {
   getSingleCourse,
   updateCourse,
 } from "../controllers/course.controller";
+import { createCourseReview } from "../controllers/review.controller";
 import { requireAdmin } from "../middlewares/admin.middleware";
 import { requireAuth } from "../middlewares/auth.middleware";
 
@@ -18,6 +19,15 @@ const router = Router();
 router.get("/", getAllCourses);
 
 router.get("/:id", getSingleCourse);
+
+/*
+ * Logged-in student route
+ */
+router.post(
+  "/:id/reviews",
+  requireAuth,
+  createCourseReview,
+);
 
 /*
  * Admin-only routes

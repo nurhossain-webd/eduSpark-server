@@ -1,4 +1,17 @@
-import { Document, Schema, model, models } from "mongoose";
+import {
+  Document,
+  Schema,
+  model,
+  models,
+} from "mongoose";
+
+export interface ICourseReview {
+  user: Schema.Types.ObjectId;
+  studentName: string;
+  rating: number;
+  comment: string;
+  createdAt: Date;
+}
 
 export interface ICourse extends Document {
   title: string;
@@ -9,6 +22,8 @@ export interface ICourse extends Document {
   language: string;
   price: number;
   rating: number;
+  totalReviews: number;
+  reviews: ICourseReview[];
   students: number;
   duration: string;
   lessons: number;
@@ -18,6 +33,46 @@ export interface ICourse extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+const reviewSchema = new Schema<ICourseReview>(
+  {
+    user: {
+  type: Schema.Types.ObjectId,
+  ref: "User",
+  required: true,
+},
+    studentName: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 2,
+      maxlength: 60,
+    },
+
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+
+    comment: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 10,
+      maxlength: 500,
+    },
+
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    _id: true,
+  },
+);
 
 const courseSchema = new Schema<ICourse>(
   {
@@ -74,6 +129,17 @@ const courseSchema = new Schema<ICourse>(
       max: 5,
     },
 
+    totalReviews: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    reviews: {
+      type: [reviewSchema],
+      default: [],
+    },
+
     students: {
       type: Number,
       default: 0,
@@ -122,6 +188,7 @@ courseSchema.index({
 });
 
 const Course =
-  models.Course || model<ICourse>("Course", courseSchema);
+  models.Course ||
+  model<ICourse>("Course", courseSchema);
 
 export default Course;

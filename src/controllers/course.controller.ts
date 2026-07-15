@@ -3,6 +3,20 @@ import { Request, Response } from "express";
 import * as CourseService from "../services/course.service";
 import { createCourseSchema } from "../validations/course.validation";
 
+function getStringParameter(
+  parameter: string | string[] | undefined,
+): string | null {
+  if (typeof parameter === "string") {
+    return parameter;
+  }
+
+  if (Array.isArray(parameter) && parameter.length > 0) {
+    return parameter[0] ?? null;
+  }
+
+  return null;
+}
+
 const updateCourseSchema = createCourseSchema.partial();
 
 export async function createCourse(
@@ -22,7 +36,9 @@ export async function createCourse(
       return;
     }
 
-    const course = await CourseService.createCourse(validation.data);
+    const course = await CourseService.createCourse(
+      validation.data,
+    );
 
     res.status(201).json({
       success: true,
@@ -113,9 +129,20 @@ export async function getSingleCourse(
   res: Response,
 ): Promise<void> {
   try {
-    const courseId = req.params.id;
+    const courseId = getStringParameter(req.params.id);
 
-    const course = await CourseService.getCourseById(courseId);
+    if (!courseId) {
+      res.status(400).json({
+        success: false,
+        message: "A valid course ID is required.",
+      });
+
+      return;
+    }
+
+    const course = await CourseService.getCourseById(
+      courseId,
+    );
 
     if (!course) {
       res.status(404).json({
@@ -145,9 +172,20 @@ export async function updateCourse(
   res: Response,
 ): Promise<void> {
   try {
-    const courseId = req.params.id;
+    const courseId = getStringParameter(req.params.id);
 
-    const validation = updateCourseSchema.safeParse(req.body);
+    if (!courseId) {
+      res.status(400).json({
+        success: false,
+        message: "A valid course ID is required.",
+      });
+
+      return;
+    }
+
+    const validation = updateCourseSchema.safeParse(
+      req.body,
+    );
 
     if (!validation.success) {
       res.status(400).json({
@@ -168,10 +206,11 @@ export async function updateCourse(
       return;
     }
 
-    const updatedCourse = await CourseService.updateCourse(
-      courseId,
-      validation.data,
-    );
+    const updatedCourse =
+      await CourseService.updateCourse(
+        courseId,
+        validation.data,
+      );
 
     if (!updatedCourse) {
       res.status(404).json({
@@ -202,10 +241,21 @@ export async function deleteCourse(
   res: Response,
 ): Promise<void> {
   try {
-    const courseId = req.params.id;
+    const courseId = getStringParameter(req.params.id);
+
+    if (!courseId) {
+      res.status(400).json({
+        success: false,
+        message: "A valid course ID is required.",
+      });
+
+      return;
+    }
 
     const deletedCourse =
-      await CourseService.deleteCourseById(courseId);
+      await CourseService.deleteCourseById(
+        courseId,
+      );
 
     if (!deletedCourse) {
       res.status(404).json({
