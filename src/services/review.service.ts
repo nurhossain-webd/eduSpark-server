@@ -1,8 +1,11 @@
 import { Types } from "mongoose";
+
+import Course, {
+  ICourseReview,
+} from "../models/Course";
 import Enrollment from "../models/Enrollment";
 import User from "../models/User";
 import { CreateReviewInput } from "../validations/review.validation";
-import Course, { ICourseReview } from "../models/Course";
 
 export async function createCourseReview(
   courseId: string,
@@ -40,10 +43,18 @@ export async function createCourseReview(
     throw new Error("ENROLLMENT_REQUIRED");
   }
 
+  /*
+   * Older or manually inserted courses may not contain
+   * reviews and totalReviews fields.
+   */
+  if (!Array.isArray(course.reviews)) {
+    course.reviews = [];
+  }
+
   const alreadyReviewed = course.reviews.some(
-  (review: ICourseReview) =>
-    review.user.toString() === userObjectId.toString(),
-);
+    (review: ICourseReview) =>
+      review.user?.toString() === userObjectId.toString(),
+  );
 
   if (alreadyReviewed) {
     throw new Error("ALREADY_REVIEWED");
@@ -53,19 +64,19 @@ export async function createCourseReview(
     user: userObjectId,
     studentName: user.name,
     rating: payload.rating,
-    comment: payload.comment,
+    comment: payload.comment.trim(),
     createdAt: new Date(),
   });
 
   course.totalReviews = course.reviews.length;
 
- const ratingTotal = course.reviews.reduce(
-  (
-    total: number,
-    review: ICourseReview,
-  ) => total + review.rating,
-  0,
-);
+  const ratingTotal = course.reviews.reduce(
+    (
+      total: number,
+      review: ICourseReview,
+    ) => total + Number(review.rating),
+    0,
+  );
 
   course.rating = Number(
     (ratingTotal / course.totalReviews).toFixed(1),

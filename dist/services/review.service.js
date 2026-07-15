@@ -5,9 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createCourseReview = createCourseReview;
 const mongoose_1 = require("mongoose");
+const Course_1 = __importDefault(require("../models/Course"));
 const Enrollment_1 = __importDefault(require("../models/Enrollment"));
 const User_1 = __importDefault(require("../models/User"));
-const Course_1 = __importDefault(require("../models/Course"));
 async function createCourseReview(courseId, userId, payload) {
     if (!mongoose_1.Types.ObjectId.isValid(courseId) ||
         !mongoose_1.Types.ObjectId.isValid(userId)) {
@@ -32,7 +32,14 @@ async function createCourseReview(courseId, userId, payload) {
     if (!enrollment) {
         throw new Error("ENROLLMENT_REQUIRED");
     }
-    const alreadyReviewed = course.reviews.some((review) => review.user.toString() === userObjectId.toString());
+    /*
+     * Older or manually inserted courses may not contain
+     * reviews and totalReviews fields.
+     */
+    if (!Array.isArray(course.reviews)) {
+        course.reviews = [];
+    }
+    const alreadyReviewed = course.reviews.some((review) => review.user?.toString() === userObjectId.toString());
     if (alreadyReviewed) {
         throw new Error("ALREADY_REVIEWED");
     }
@@ -40,11 +47,11 @@ async function createCourseReview(courseId, userId, payload) {
         user: userObjectId,
         studentName: user.name,
         rating: payload.rating,
-        comment: payload.comment,
+        comment: payload.comment.trim(),
         createdAt: new Date(),
     });
     course.totalReviews = course.reviews.length;
-    const ratingTotal = course.reviews.reduce((total, review) => total + review.rating, 0);
+    const ratingTotal = course.reviews.reduce((total, review) => total + Number(review.rating), 0);
     course.rating = Number((ratingTotal / course.totalReviews).toFixed(1));
     await course.save();
     return course;
