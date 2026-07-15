@@ -5,8 +5,14 @@ import morgan from "morgan";
 
 import authRoutes from "./routes/auth.routes";
 import courseRoutes from "./routes/course.routes";
+import enrollmentRoutes from "./routes/enrollment.routes";
+
 
 const app = express();
+app.use(
+  "/api/enrollments",
+  enrollmentRoutes,
+);
 
 app.use(
   cors({
