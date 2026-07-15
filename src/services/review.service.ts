@@ -43,15 +43,12 @@ export async function createCourseReview(
     throw new Error("ENROLLMENT_REQUIRED");
   }
 
-  /*
-   * Older or manually inserted courses may not contain
-   * reviews and totalReviews fields.
-   */
-  if (!Array.isArray(course.reviews)) {
-    course.reviews = [];
-  }
+  const currentReviews: ICourseReview[] =
+    Array.isArray(course.reviews)
+      ? course.reviews
+      : [];
 
-  const alreadyReviewed = course.reviews.some(
+  const alreadyReviewed = currentReviews.some(
     (review: ICourseReview) =>
       review.user?.toString() === userObjectId.toString(),
   );
@@ -60,17 +57,20 @@ export async function createCourseReview(
     throw new Error("ALREADY_REVIEWED");
   }
 
-  course.reviews.push({
+  const newReview: ICourseReview = {
     user: userObjectId,
     studentName: user.name,
     rating: payload.rating,
     comment: payload.comment.trim(),
     createdAt: new Date(),
-  });
+  };
 
-  course.totalReviews = course.reviews.length;
+  const updatedReviews: ICourseReview[] = [
+    ...currentReviews,
+    newReview,
+  ];
 
-  const ratingTotal = course.reviews.reduce(
+  const ratingTotal = updatedReviews.reduce(
     (
       total: number,
       review: ICourseReview,
@@ -78,11 +78,31 @@ export async function createCourseReview(
     0,
   );
 
-  course.rating = Number(
-    (ratingTotal / course.totalReviews).toFixed(1),
+  const updatedRating = Number(
+    (
+      ratingTotal / updatedReviews.length
+    ).toFixed(1),
   );
 
-  await course.save();
+  const updatedCourse =
+    await Course.findByIdAndUpdate(
+      courseObjectId,
+      {
+        $set: {
+          reviews: updatedReviews,
+          totalReviews: updatedReviews.length,
+          rating: updatedRating,
+        },
+      },
+      {
+        new: true,
+        runValidators: false,
+      },
+    );
 
-  return course;
+  if (!updatedCourse) {
+    throw new Error("COURSE_NOT_FOUND");
+  }
+
+  return updatedCourse;
 }
